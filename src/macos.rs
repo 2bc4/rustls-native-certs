@@ -1,10 +1,10 @@
-use pki_types::CertificateDer;
+use base64::{engine::general_purpose::STANDARD as BASE64_STANDARD, Engine as _};
 use security_framework::trust_settings::{Domain, TrustSettings, TrustSettingsForCertificate};
 
 use std::collections::HashMap;
 use std::io::{Error, ErrorKind};
 
-pub fn load_native_certs() -> Result<Vec<CertificateDer<'static>>, Error> {
+pub fn load_native_certs() -> Result<Vec<u8>, Error> {
     // The various domains are designed to interact like this:
     //
     // "Per-user Trust Settings override locally administered
@@ -27,6 +27,12 @@ pub fn load_native_certs() -> Result<Vec<CertificateDer<'static>>, Error> {
         for cert in iter {
             let der = cert.to_der();
 
+            //convert to PEM (for curl)
+            let mut pem = Vec::new();
+            pem.extend_from_slice("-----BEGIN CERTIFICATE-----\n".as_bytes());
+            pem.extend_from_slice(BASE64_STANDARD.encode(der).as_bytes());
+            pem.extend_from_slice("\n-----END CERTIFICATE-----\n".as_bytes());
+
             // If there are no specific trust settings, the default
             // is to trust the certificate as a root cert.  Weird API but OK.
             // The docs say:
@@ -38,7 +44,7 @@ pub fn load_native_certs() -> Result<Vec<CertificateDer<'static>>, Error> {
                 .map_err(|err| Error::new(ErrorKind::Other, err))?
                 .unwrap_or(TrustSettingsForCertificate::TrustRoot);
 
-            all_certs.entry(der).or_insert(trusted);
+            all_certs.entry(pem).or_insert(trusted);
         }
     }
 
@@ -46,10 +52,10 @@ pub fn load_native_certs() -> Result<Vec<CertificateDer<'static>>, Error> {
 
     // Now we have all the certificates and an idea of whether
     // to use them.
-    for (der, trusted) in all_certs.drain() {
+    for (pem, trusted) in all_certs.drain() {
         use TrustSettingsForCertificate::*;
         if let TrustRoot | TrustAsRoot = trusted {
-            certs.push(CertificateDer::from(der));
+            certs.extend_from_slice(pem.as_slice());
         }
     }
 

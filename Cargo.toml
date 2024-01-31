@@ -12,7 +12,6 @@ categories = ["network-programming", "cryptography"]
 
 [dependencies]
 rustls-pemfile = "2"
-pki-types = { package = "rustls-pki-types", version = "1" }
 
 [dev-dependencies]
 ring = "0.17"
@@ -31,3 +30,4 @@ openssl-probe = "0.1.2"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 security-framework = "2"
+base64 = { version = "0.21.7", default-features = false }
