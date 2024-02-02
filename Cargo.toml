@@ -10,9 +10,6 @@ homepage = "https://github.com/rustls/rustls-native-certs"
 repository = "https://github.com/rustls/rustls-native-certs"
 categories = ["network-programming", "cryptography"]
 
-[dependencies]
-rustls-pemfile = "2"
-
 [dev-dependencies]
 ring = "0.17"
 rustls = "0.22"
